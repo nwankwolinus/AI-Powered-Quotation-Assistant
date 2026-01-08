@@ -1,9 +1,10 @@
 // ============================================
-// 7. CLIENT MANAGEMENT API
-// src/app/api/clients/route.ts
+// 9. AUTONOMOUS AI ACTIONS API
+// src/app/api/ai/analyze-trends/route.ts
 // ============================================
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
+import { AILearningService } from '@/lib/services/aiLearningService'
 
 export async function GET(request: NextRequest) {
   try {
