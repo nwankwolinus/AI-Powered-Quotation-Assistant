@@ -1,10 +1,17 @@
-// src/middleware.ts
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-import { createServerClient } from '@supabase/auth-helpers-nextjs'
 
-export async function middleware(req: NextRequest) {
-  const res = NextResponse.next()
+// ============================================
+// 2. UPDATE MIDDLEWARE (Fix deprecation warning)
+// File: src/middleware.ts
+// ============================================
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
+
+export async function middleware(request: NextRequest) {
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  })
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,55 +19,85 @@ export async function middleware(req: NextRequest) {
     {
       cookies: {
         get(name: string) {
-          return req.cookies.get(name)?.value
+          return request.cookies.get(name)?.value
         },
         set(name: string, value: string, options: any) {
-          res.cookies.set({ name, value, ...options })
+          request.cookies.set({
+            name,
+            value,
+            ...options,
+          })
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          })
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+          })
         },
         remove(name: string, options: any) {
-          res.cookies.set({ name, value: '', ...options })
+          request.cookies.set({
+            name,
+            value: '',
+            ...options,
+          })
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          })
+          response.cookies.set({
+            name,
+            value: '',
+            ...options,
+          })
         },
       },
     }
   )
 
+  // Get user session
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const pathname = req.nextUrl.pathname
-
-  // Protect authenticated routes
-  const protectedRoutes = [
-    '/quotes',
-    '/database',
-    '/clients',
-    '/settings',
-  ]
-
-  const isProtected = protectedRoutes.some(route =>
-    pathname.startsWith(route)
+  // Protected routes - require authentication
+  const protectedRoutes = ['/dashboard', '/quotes', '/database', '/clients', '/settings']
+  const isProtectedRoute = protectedRoutes.some(route => 
+    request.nextUrl.pathname.startsWith(route)
   )
 
-  if (isProtected && !user) {
-    return NextResponse.redirect(new URL('/login', req.url))
+  // Auth routes - redirect to dashboard if already logged in
+  const authRoutes = ['/auth/login', '/auth/register']
+  const isAuthRoute = authRoutes.some(route => 
+    request.nextUrl.pathname.startsWith(route)
+  )
+
+  // If accessing protected route without auth, redirect to login
+  if (isProtectedRoute && !user) {
+    return NextResponse.redirect(new URL('/auth/login', request.url))
   }
 
-  // Redirect logged-in users away from auth pages
-  if ((pathname === '/login' || pathname === '/register') && user) {
-    return NextResponse.redirect(new URL('/quotes', req.url))
+  // If accessing auth route while logged in, redirect to dashboard
+  if (isAuthRoute && user) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  return res
+  return response
 }
 
 export const config = {
   matcher: [
-    '/quotes/:path*',
-    '/database/:path*',
-    '/clients/:path*',
-    '/settings/:path*',
-    '/login',
-    '/register',
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

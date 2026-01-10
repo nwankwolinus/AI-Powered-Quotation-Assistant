@@ -5,7 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
 import { QuoteService } from '@/lib/services/quoteService'
-import { PDFService } from '@/lib/services/pdfService'
+import { PDFService } from '@/lib/services/pdfServices'
 
 export async function GET(
   request: NextRequest,
@@ -29,7 +29,7 @@ export async function GET(
     const pdfService = new PDFService()
     const pdfBuffer = await pdfService.generateQuotePDF(quote)
 
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(new Uint8Array(pdfBuffer), {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="quote-${quote.quote_number}.pdf"`,

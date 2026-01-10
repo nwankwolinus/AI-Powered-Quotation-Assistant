@@ -1,8 +1,8 @@
 // ============================================
-// 9. Settings Service
-// src/lib/services/settingsService.ts
+// SETTINGS SERVICE - FIXED
+// File: src/lib/services/settingsService.ts
 // ============================================
-import { createServerClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 export interface Setting {
   id: string
@@ -14,10 +14,10 @@ export interface Setting {
 }
 
 export class SettingsService {
-  private supabase = createServerClient()
-
   async getAllSettings(): Promise<Setting[]> {
-    const { data, error } = await this.supabase
+    const supabase = await createClient()
+    
+    const { data, error } = await supabase
       .from('settings')
       .select('*')
       .order('key', { ascending: true })
@@ -27,7 +27,9 @@ export class SettingsService {
   }
 
   async getSettingByKey(key: string): Promise<Setting | null> {
-    const { data, error } = await this.supabase
+    const supabase = await createClient()
+    
+    const { data, error } = await supabase
       .from('settings')
       .select('*')
       .eq('key', key)
@@ -38,7 +40,9 @@ export class SettingsService {
   }
 
   async updateSetting(key: string, value: string, userId: string): Promise<Setting> {
-    const { data, error } = await this.supabase
+    const supabase = await createClient()
+    
+    const { data, error } = await supabase
       .from('settings')
       .update({
         value,
@@ -51,5 +55,32 @@ export class SettingsService {
 
     if (error) throw new Error(error.message)
     return data as Setting
+  }
+
+  async createSetting(setting: Omit<Setting, 'id' | 'updated_at'>): Promise<Setting> {
+    const supabase = await createClient()
+    
+    const { data, error } = await supabase
+      .from('settings')
+      .insert({
+        ...setting,
+        updated_at: new Date().toISOString(),
+      })
+      .select()
+      .single()
+
+    if (error) throw new Error(error.message)
+    return data as Setting
+  }
+
+  async deleteSetting(key: string): Promise<void> {
+    const supabase = await createClient()
+    
+    const { error } = await supabase
+      .from('settings')
+      .delete()
+      .eq('key', key)
+
+    if (error) throw new Error(error.message)
   }
 }

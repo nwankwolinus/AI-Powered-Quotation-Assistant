@@ -1,9 +1,8 @@
 // ============================================
-// 4. AI LEARNING SYSTEM - QUOTE ANALYSIS
+// 2. AI LEARNING SERVICE - FIXED
+// File: src/lib/services/aiLearningService.ts
 // ============================================
-
-// src/lib/services/aiLearningService.ts
-import { createServerClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { AIService } from './aiService'
 
 export interface QuotePattern {
@@ -17,12 +16,13 @@ export interface QuotePattern {
 }
 
 export class AILearningService {
-  private supabase = createServerClient()
   private aiService = new AIService()
 
   async learnFromQuote(quoteId: string): Promise<void> {
+    const supabase = await createClient()
+    
     // Get the quote with all items
-    const { data: quote } = await this.supabase
+    const { data: quote } = await supabase
       .from('quotes')
       .select('*, quote_items(*)')
       .eq('id', quoteId)
@@ -84,15 +84,17 @@ export class AILearningService {
   }
 
   private async saveOrUpdatePattern(patternType: string, patternData: any): Promise<void> {
+    const supabase = await createClient()
+    
     // Check if similar pattern exists
-    const { data: existingPatterns } = await this.supabase
+    const { data: existingPatterns } = await supabase
       .from('quote_patterns')
       .select('*')
       .eq('pattern_type', patternType)
 
     // In a real implementation, you'd use similarity matching
     // For now, just insert new pattern
-    await this.supabase.from('quote_patterns').insert({
+    await supabase.from('quote_patterns').insert({
       pattern_type: patternType,
       pattern_data: patternData,
       confidence_score: 0.5,
@@ -115,8 +117,10 @@ export class AILearningService {
   }
 
   async getRecommendations(panelType: string, amperage: string): Promise<any> {
+    const supabase = await createClient()
+    
     // Get patterns that match
-    const { data: patterns } = await this.supabase
+    const { data: patterns } = await supabase
       .from('quote_patterns')
       .select('*')
       .order('confidence_score', { ascending: false })
@@ -136,8 +140,10 @@ export class AILearningService {
   }
 
   async analyzeQuotingTrends(): Promise<any> {
+    const supabase = await createClient()
+    
     // Get recent quotes
-    const { data: recentQuotes } = await this.supabase
+    const { data: recentQuotes } = await supabase
       .from('quotes')
       .select('*, quote_items(*)')
       .order('created_at', { ascending: false })

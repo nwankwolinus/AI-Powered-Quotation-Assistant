@@ -3,7 +3,7 @@
 // src/app/api/quotes/[id]/route.ts
 // ============================================
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { QuoteService } from '@/lib/services/quoteService'
 
 export async function GET(
@@ -11,7 +11,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createServerClient()
+    const supabase = await createClient()
     
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -37,7 +37,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createServerClient()
+    const supabase = await createClient()
     
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -61,7 +61,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createServerClient()
+    const supabase = await createClient()
     
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser()

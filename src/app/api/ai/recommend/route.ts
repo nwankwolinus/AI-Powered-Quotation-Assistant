@@ -4,12 +4,12 @@
 // ============================================
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { AILearningService } from '@/lib/services/aiLearningService'
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServerClient()
+    const supabase = await createClient()
 
     // Authenticate user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
